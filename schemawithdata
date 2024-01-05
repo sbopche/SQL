@@ -1971,3 +1971,24 @@ BEGIN
 	VALUES (@CurrencyFrom, @CurrencyTo, CAST(@CurrencyFromValue AS DECIMAL(19,9)), CAST(@CurrencyToValue  AS DECIMAL(19,9)), @CreatedBy, @CreatedBy, GETDATE(), GETDATE())
 END;
 GO
+
+USE [TDH_UAT]
+GO
+/****** Object:  UserDefinedFunction [dbo].[SplitStringToTable]    Script Date: 1/5/2024 10:56:02 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER FUNCTION [dbo].[SplitStringToTable]
+(
+    @String NVARCHAR(MAX),
+    @Delimiter CHAR(1)
+)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT value AS Item
+    FROM STRING_SPLIT(@String, @Delimiter)
+);
+GO
