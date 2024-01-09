@@ -1,0 +1,417 @@
+using KPMG.ITS.TAXDNA.DAL.Model;
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
+using System.Net;
+using System.Text;
+using System.Web;
+using System.Web.Script.Serialization;
+
+namespace KPMG.ITS.TAXDNA.DAL
+{
+    public class CbcAnalytics
+    {
+        #region Init
+        private readonly string strConn = "";
+        private readonly Logger objLogger = null;
+        private readonly ClassEncryptDecrypt encryptDecrypt = null;
+        private readonly string strLogPath = string.Empty;
+        List<CbCRCurrencyConversionData> currencyConversionDatas = null;
+        #endregion
+
+        #region Ctor
+        public CbcAnalytics()
+        {
+            objLogger = new Logger();
+            encryptDecrypt = new ClassEncryptDecrypt();
+            strConn = Convert.ToString(ConfigurationManager.ConnectionStrings["ConnectionStringTAX"]);
+            strLogPath = Convert.ToString(ConfigurationManager.AppSettings.Get("LogPath"));
+        }
+        #endregion
+
+        #region Get Master Data
+        public DataTable GetCbCrFilterPeriodMasterData(string clientId)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataTable dataTable = new DataTable();
+            try
+            {
+                objDBUtilSQL.AddParameter("@ClientId", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(clientId) ? null : clientId));
+                dataTable = objDBUtilSQL.GetDataTable("GetCbCrFilterPeriodMasterData", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetCbCrFilterPeriodMasterData()");
+            }
+            return dataTable;
+        }
+
+        public DataTable GetCbCrFilterCountryMasterDataByPeriod(string periods = null)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataTable dataTable = new DataTable();
+            try
+            {
+                objDBUtilSQL.AddParameter("@Periods", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(periods) ? null : periods));
+                dataTable = objDBUtilSQL.GetDataTable("GetCbCrFilterCountryMasterDataByPeriod", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetCbCrFilterCountryMasterDataByPeriod()");
+            }
+            return dataTable;
+        }
+
+        public DataTable GetCbCrFilterEntityMasterDataByPeriodAndCountry(string periods = null, string countries = null)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataTable dataTable = new DataTable();
+            try
+            {
+                objDBUtilSQL.AddParameter("@Periods", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(periods) ? null : periods));
+                objDBUtilSQL.AddParameter("@Countries", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(countries) ? null : countries));
+                dataTable = objDBUtilSQL.GetDataTable("GetCbCrFilterEntityMasterDataByPeriodAndCountry", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetCbCrFilterEntityMasterDataByPeriodAndCountry()");
+            }
+            return dataTable;
+        }
+
+        public DataSet GetCbCrFilterCurrencyData()
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataSet dataSet = new DataSet();
+            try
+            {
+                dataSet = objDBUtilSQL.GetDataSet("GetCbCrFilterCurrencyData", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetCbCrFilterCurrencyData()");
+            }
+            return dataSet;
+        }
+
+        #endregion
+
+        #region Analysis of top 10 jurisdictions with high revenue to total revenue.
+        public DataSet GetAnalysisOfTop10Jurisdiction(Model.AnalyticsFilterRequestModel requestModel, int selectedType = 1)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataSet dataSet = new DataSet();
+            try
+            {
+                objDBUtilSQL.AddParameter("@ClientId", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.ClientId) ? null : requestModel.ClientId));
+                objDBUtilSQL.AddParameter("@SelectType", SqlDbType.Int, ParameterDirection.Input, selectedType);
+                objDBUtilSQL.AddParameter("@Periods", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Periods) ? null : requestModel.Periods));
+                objDBUtilSQL.AddParameter("@CurrencyType", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.CurrencyUsed) ? null : requestModel.CurrencyUsed));
+                dataSet = objDBUtilSQL.GetDataSet("GetAnalysisOfTop10Jurisdiction", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetAnalysisOfTop10Jurisdiction()");
+            }
+            return dataSet;
+        }
+
+        public DataSet GetAnalysisOfTop10JurisdictionDrillDown(Model.AnalyticsFilterRequestModel requestModel, string drillCountry, int selectedType = 1)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataSet dataSet = new DataSet();
+            try
+            {
+                objDBUtilSQL.AddParameter("@ClientId", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.ClientId) ? null : requestModel.ClientId));
+                objDBUtilSQL.AddParameter("@SelectType", SqlDbType.Int, ParameterDirection.Input, selectedType);
+                objDBUtilSQL.AddParameter("@DrillCountry", SqlDbType.NVarChar, ParameterDirection.Input, drillCountry);
+                objDBUtilSQL.AddParameter("@Periods", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Periods) ? null : requestModel.Periods));
+                objDBUtilSQL.AddParameter("@CurrencyType", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.CurrencyUsed) ? null : requestModel.CurrencyUsed));
+                dataSet = objDBUtilSQL.GetDataSet("GetAnalysisOfTop10JurisdictionDrillDown", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetAnalysisOfTop10JurisdictionDrillDown()");
+            }
+            return dataSet;
+        }
+
+        #endregion
+
+        #region Revenue – snapshot of 5 years
+        public DataSet GetRevenueSnapshotOfnthYears(Model.AnalyticsFilterRequestModel requestModel, int selectedType = 1)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataSet dataSet = new DataSet();
+            try
+            {
+                objDBUtilSQL.AddParameter("@ClientId", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.ClientId) ? null : requestModel.ClientId));
+                objDBUtilSQL.AddParameter("@SelectType", SqlDbType.Int, ParameterDirection.Input, selectedType);
+                objDBUtilSQL.AddParameter("@Periods", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Periods) ? null : requestModel.Periods));
+                objDBUtilSQL.AddParameter("@Countries", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Countries) ? null : requestModel.Countries));
+                objDBUtilSQL.AddParameter("@Entities", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Entities) ? null : requestModel.Entities));
+                objDBUtilSQL.AddParameter("@CurrencyType", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.CurrencyUsed) ? null : requestModel.CurrencyUsed));
+                dataSet = objDBUtilSQL.GetDataSet("GetRevenueSnapshotOfnthYears", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetRevenueSnapshotOfnthYears()");
+            }
+            return dataSet;
+        }
+
+        public DataSet GetRevenueSnapshotOfnthYearsDrillDown(Model.AnalyticsFilterRequestModel requestModel, string drillCountry, int selectedType = 1)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataSet dataSet = new DataSet();
+            try
+            {
+                objDBUtilSQL.AddParameter("@ClientId", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.ClientId) ? null : requestModel.ClientId));
+                objDBUtilSQL.AddParameter("@DrillCountry", SqlDbType.NVarChar, ParameterDirection.Input, drillCountry);
+                objDBUtilSQL.AddParameter("@SelectType", SqlDbType.Int, ParameterDirection.Input, selectedType);
+                objDBUtilSQL.AddParameter("@Periods", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Periods) ? null : requestModel.Periods));
+                objDBUtilSQL.AddParameter("@Countries", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Countries) ? null : requestModel.Countries));
+                objDBUtilSQL.AddParameter("@Entities", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Entities) ? null : requestModel.Entities));
+                objDBUtilSQL.AddParameter("@CurrencyType", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.CurrencyUsed) ? null : requestModel.CurrencyUsed));
+                dataSet = objDBUtilSQL.GetDataSet("GetRevenueSnapshotOfnthYearsDrillDown", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetRevenueSnapshotOfnthYearsDrillDown()");
+            }
+            return dataSet;
+        }
+        #endregion
+
+        #region Related Party Revenue – snapshot of 5 years
+        public DataSet GetRelatedPartyRevenueSnapshotOfnthYears(Model.AnalyticsFilterRequestModel requestModel, int selectedType = 1)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataSet dataSet = new DataSet();
+            try
+            {
+                objDBUtilSQL.AddParameter("@ClientId", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.ClientId) ? null : requestModel.ClientId));
+                objDBUtilSQL.AddParameter("@SelectType", SqlDbType.Int, ParameterDirection.Input, selectedType);
+                objDBUtilSQL.AddParameter("@Periods", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Periods) ? null : requestModel.Periods));
+                objDBUtilSQL.AddParameter("@Countries", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Countries) ? null : requestModel.Countries));
+                objDBUtilSQL.AddParameter("@Entities", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Entities) ? null : requestModel.Entities));
+                objDBUtilSQL.AddParameter("@CurrencyType", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.CurrencyUsed) ? null : requestModel.CurrencyUsed));
+                dataSet = objDBUtilSQL.GetDataSet("GetRelatedPartyRevenueSnapshotOfnthYears", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetRelatedPartyRevenueSnapshotOfnthYears()");
+            }
+            return dataSet;
+        }
+
+        public DataSet GetRelatedPartyRevenueSnapshotOfnthYearsDrillDown(Model.AnalyticsFilterRequestModel requestModel, string drillCountry, int selectedType = 1)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataSet dataSet = new DataSet();
+            try
+            {
+                objDBUtilSQL.AddParameter("@ClientId", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.ClientId) ? null : requestModel.ClientId));
+                objDBUtilSQL.AddParameter("@DrillCountry", SqlDbType.NVarChar, ParameterDirection.Input, drillCountry);
+                objDBUtilSQL.AddParameter("@SelectType", SqlDbType.Int, ParameterDirection.Input, selectedType);
+                objDBUtilSQL.AddParameter("@Periods", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Periods) ? null : requestModel.Periods));
+                objDBUtilSQL.AddParameter("@Countries", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Countries) ? null : requestModel.Countries));
+                objDBUtilSQL.AddParameter("@Entities", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Entities) ? null : requestModel.Entities));
+                objDBUtilSQL.AddParameter("@CurrencyType", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.CurrencyUsed) ? null : requestModel.CurrencyUsed));
+                dataSet = objDBUtilSQL.GetDataSet("GetRelatedPartyRevenueSnapshotOfnthYearsDrillDown", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetRelatedPartyRevenueSnapshotOfnthYearsDrillDown()");
+            }
+            return dataSet;
+        }
+        #endregion
+
+        #region ETR – snapshot of 5 years
+        public DataSet GetETRSnapshotOfnthYears(Model.AnalyticsFilterRequestModel requestModel)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataSet dataSet = new DataSet();
+            try
+            {
+                objDBUtilSQL.AddParameter("@ClientId", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.ClientId) ? null : requestModel.ClientId));
+                objDBUtilSQL.AddParameter("@Periods", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Periods) ? null : requestModel.Periods));
+                objDBUtilSQL.AddParameter("@Countries", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Countries) ? null : requestModel.Countries));
+                objDBUtilSQL.AddParameter("@Entities", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Entities) ? null : requestModel.Entities));
+                objDBUtilSQL.AddParameter("@CurrencyType", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.CurrencyUsed) ? null : requestModel.CurrencyUsed));
+                dataSet = objDBUtilSQL.GetDataSet("GetETRSnapshotOfnthYears", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetETRSnapshotOfnthYears()");
+            }
+            return dataSet;
+        }
+
+        public DataSet GetETRSnapshotOfnthYearsDrillDown(Model.AnalyticsFilterRequestModel requestModel, string drillCountry)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataSet dataSet = new DataSet();
+            try
+            {
+                objDBUtilSQL.AddParameter("@ClientId", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.ClientId) ? null : requestModel.ClientId));
+                objDBUtilSQL.AddParameter("@DrillCountry", SqlDbType.NVarChar, ParameterDirection.Input, drillCountry);
+                objDBUtilSQL.AddParameter("@Periods", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Periods) ? null : requestModel.Periods));
+                objDBUtilSQL.AddParameter("@Countries", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Countries) ? null : requestModel.Countries));
+                objDBUtilSQL.AddParameter("@Entities", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Entities) ? null : requestModel.Entities));
+                objDBUtilSQL.AddParameter("@CurrencyType", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.CurrencyUsed) ? null : requestModel.CurrencyUsed));
+                dataSet = objDBUtilSQL.GetDataSet("GetETRSnapshotOfnthYearsDrillDown", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetETRSnapshotOfnthYearsDrillDown()");
+            }
+            return dataSet;
+        }
+        #endregion
+
+        #region Overview of top 10 jurisdiction
+        public DataSet GetOverviewOfTop10Jurisdiction(Model.AnalyticsFilterRequestModel requestModel, int topCountry)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            DataSet dataSet = new DataSet();
+            try
+            {
+                objDBUtilSQL.AddParameter("@ClientId", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.ClientId) ? null : requestModel.ClientId));
+                objDBUtilSQL.AddParameter("@TopCountry", SqlDbType.Int, ParameterDirection.Input, topCountry);
+                objDBUtilSQL.AddParameter("@Periods", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.Periods) ? null : requestModel.Periods));
+                objDBUtilSQL.AddParameter("@CurrencyType", SqlDbType.NVarChar, ParameterDirection.Input, (string.IsNullOrEmpty(requestModel.CurrencyUsed) ? null : requestModel.CurrencyUsed));
+                dataSet = objDBUtilSQL.GetDataSet("GetOverviewOfTop10Jurisdiction", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.GetOverviewOfTop10Jurisdiction()");
+            }
+            return dataSet;
+        }
+        #endregion
+
+        #region Currency Conversions
+
+        public void GetCurrentCurrencyValues(DataTable currencyFromDT, DataTable currencyToDT)
+        {
+            currencyConversionDatas = new List<CbCRCurrencyConversionData>();
+            foreach (DataRow fromRow in currencyFromDT.Rows)
+            {
+                string currencyFrom = fromRow["Currency"].ToString();
+                foreach (DataRow toRow in currencyToDT.Rows)
+                {
+                    string currencyTo = toRow["CurrencyCode"].ToString();
+
+                    CallCurrencyConversionAPI(currencyFrom, currencyTo);
+                }
+            }
+
+            if (currencyConversionDatas.Count > 0)
+            {
+                var currencyConversionDatasJson = Newtonsoft.Json.JsonConvert.SerializeObject(currencyConversionDatas);
+                SaveUpdateCurrencyDetailsInJson(currencyConversionDatasJson, true);
+            }
+        }
+
+        private void CallCurrencyConversionAPI(string currencyFrom, string currencyTo)
+        {
+            try
+            {
+                string currencyUrl = Convert.ToString(ConfigurationManager.AppSettings["CurrencyAPI"]);
+
+                currencyUrl = $"{currencyUrl}{currencyFrom}&symbols={currencyTo}";
+
+                WebClient client = new WebClient();
+                client.Headers["Content-type"] = "application/json";
+                client.Encoding = Encoding.UTF8;
+                var json = client.UploadString(currencyUrl, "");
+
+                Root objRoot = (new JavaScriptSerializer()).Deserialize<Root>(json);
+                if (objRoot.success)
+                {
+                    decimal currencyFromValue = 1;
+                    decimal currencyToValue = 1;
+                    currencyToValue = (decimal)GetCurrencyValueByCode(currencyTo, objRoot, (double)currencyToValue);
+
+                    CbCRCurrencyConversionData cbCRCurrencyConversionData = new CbCRCurrencyConversionData()
+                    {
+                        CurrencyFrom = currencyFrom,
+                        CurrencyTo = currencyTo,
+                        CurrencyFromValue = currencyFromValue,
+                        CurrencyToValue = currencyToValue,
+                        CreatedBy = encryptDecrypt.Encrypt(Convert.ToString(HttpContext.Current.User.Identity.Name)),
+                        CreationDate = DateTimeOffset.Now,
+                        ModifiedBy = encryptDecrypt.Encrypt(Convert.ToString(HttpContext.Current.User.Identity.Name)),
+                        ModifiedDate = DateTimeOffset.Now
+                    };
+
+                    currencyConversionDatas.Add(cbCRCurrencyConversionData);
+                }
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.CallCurrencyConversionAPI()");
+            }
+        }
+
+        private double GetCurrencyValueByCode(string currencyTo, Root objRoot, double currencyToValue)
+        {
+            switch (currencyTo)
+            {
+                case "INR":
+                    currencyToValue = objRoot.rates.INR;
+                    break;
+                case "USD":
+                    currencyToValue = objRoot.rates.USD;
+                    break;
+                case "EUR":
+                    currencyToValue = objRoot.rates.EUR;
+                    break;
+                case "JPY":
+                    currencyToValue = objRoot.rates.JPY;
+                    break;
+                case "GBP":
+                    currencyToValue = objRoot.rates.GBP;
+                    break;
+                case "AUD":
+                    currencyToValue = objRoot.rates.AUD;
+                    break;
+                case "CAD":
+                    currencyToValue = objRoot.rates.CAD;
+                    break;
+                case "CHF":
+                    currencyToValue = objRoot.rates.CHF;
+                    break;
+                case "CNY":
+                    currencyToValue = objRoot.rates.CNY;
+                    break;
+                case "HKD":
+                    currencyToValue = objRoot.rates.HKD;
+                    break;
+                default:
+                    break;
+            }
+
+            return currencyToValue;
+        }
+
+        private void SaveUpdateCurrencyDetailsInJson(string CurrencyJson, bool isDeleteTable)
+        {
+            DBUtilSQL objDBUtilSQL = new DBUtilSQL();
+            try
+            {
+                objDBUtilSQL.AddParameter("@CurrencyJson", SqlDbType.NVarChar, ParameterDirection.Input, CurrencyJson);
+                objDBUtilSQL.AddParameter("@IsDeleteTable", SqlDbType.Bit, ParameterDirection.Input, isDeleteTable);
+                objDBUtilSQL.ExecuteProcedure("SaveUpdateCurrencyDetailsInJson", strConn);
+            }
+            catch (Exception ex)
+            {
+                objLogger.LogException(strLogPath, ex, "KPMG.ITS.TAXDNA.DAL.SaveUpdateCurrencyDetails()");
+            }
+        }
+        #endregion
+    }
+}
