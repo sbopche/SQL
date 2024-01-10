@@ -33,7 +33,6 @@
         }
 
         function ddlCountries_OnClientDropDownClosing(sender, eventArgs) {
-            console.log(sender.Text);
             $("#<%=BtnGetEntityFromCountry.ClientID%>").click();
         }
 
@@ -61,9 +60,12 @@
 
         // This Function is Used To remove 0 values from chart label called inside ClientTemplate and Used to convert digits to T,B,M,K...
         function ConvertToMBKChartLabel(columnValue) {
-            if (columnValue == 0 || columnValue == 0.00) {
+            if (columnValue === 0 || columnValue === 0.00) {
                 return '';
             }
+
+            const isNegative = columnValue < 0;
+            columnValue = Math.abs(columnValue);
 
             const abbreviations = ['', 'K', 'M', 'B', 'T'];
 
@@ -74,13 +76,18 @@
             }
 
             const formattedNumber = (magnitude > 0 ? columnValue.toFixed(1) : Math.floor(columnValue)) + abbreviations[magnitude];
-            return formattedNumber;
+
+            return isNegative ? '-' + formattedNumber : formattedNumber;
         }
+
         // Y-axis Label 
         function ConvertToMBKChartLabelWithZeroPercesion(columnValue) {
-            if (columnValue == 0 || columnValue == 0.00) {
+            if (columnValue === 0 || columnValue === 0.00) {
                 return '';
             }
+
+            const isNegative = columnValue < 0;
+            columnValue = Math.abs(columnValue);
 
             const abbreviations = ['', 'K', 'M', 'B', 'T'];
 
@@ -91,7 +98,8 @@
             }
 
             const formattedNumber = (magnitude > 0 ? columnValue.toFixed(0) : Math.floor(columnValue)) + abbreviations[magnitude];
-            return formattedNumber;
+
+            return isNegative ? '-' + formattedNumber : formattedNumber;
         }
     </script>
 
